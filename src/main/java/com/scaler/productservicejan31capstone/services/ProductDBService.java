@@ -5,27 +5,33 @@ import com.scaler.productservicejan31capstone.models.Category;
 import com.scaler.productservicejan31capstone.models.Product;
 import com.scaler.productservicejan31capstone.repositories.CategoryRepository;
 import com.scaler.productservicejan31capstone.repositories.ProductRepository;
+import org.springframework.ai.azure.openai.AzureOpenAiChatModel;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service("productDBService")
 public class ProductDBService implements ProductService, ProductAIService
 {
 
     private final ChatClient chatClient;
+    private final AzureOpenAiChatModel azureOpenAiChatModel;
     ProductRepository productRepository;
     CategoryRepository categoryRepository;
 
     public ProductDBService(ProductRepository productRepository,
-                            CategoryRepository categoryRepository, ChatClient chatClient)
+                            CategoryRepository categoryRepository, ChatClient chatClient, AzureOpenAiChatModel azureOpenAiChatModel)
     {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.chatClient = chatClient;
+        this.azureOpenAiChatModel = azureOpenAiChatModel;
     }
 
     @Override
@@ -97,16 +103,25 @@ public class ProductDBService implements ProductService, ProductAIService
 
     private String getDescriptionFromAI(Product product)
     {
-        String prompt = String.format(
-                "Generate a 150-word professional marketing description for a %s product named '%s'. " +
-                        "Key features: Priced at $%.2f, Category: %s. " +
-                        "Focus on benefits and unique selling points. Avoid technical jargon. Use markdown formatting.",
-                product.getCategory().getName().toLowerCase(),
-                product.getName(),
-                product.getPrice(),
-                product.getCategory().getName()
-        );
 
-        return chatClient.prompt().user(prompt).call().content();
+//        return chatClient.prompt().user(prompt).call().content();
+
+        String message = """
+                        Generate a 150-word professional marketing description for a {categoryInLowercase} product named '{productName}'.
+                      Key features: Priced at {price}, Category: {category}.
+                      Focus on benefits and unique selling points. Avoid technical jargon. Use markdown formatting.
+                """;
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("categoryInLowercase", product.getCategory().getName().toLowerCase());
+        map.put("productName", product.getName());
+        map.put("price", Double.toString(product.getPrice()));
+        map.put("category", product.getCategory().getName());
+
+        PromptTemplate promptTemplate = new PromptTemplate(message, map);
+        Prompt prompt = promptTemplate.create();
+        ChatResponse chatResponse = azureOpenAiChatModel.call(prompt);
+        return chatResponse.getResults().get(0).getOutput().getText();
+
     }
 }
