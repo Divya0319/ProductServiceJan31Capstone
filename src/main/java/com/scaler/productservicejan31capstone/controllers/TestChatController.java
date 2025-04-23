@@ -1,14 +1,13 @@
 package com.scaler.productservicejan31capstone.controllers;
 
+import com.scaler.productservicejan31capstone.dtos.ChatRequest;
 import org.springframework.ai.azure.openai.AzureOpenAiChatModel;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,14 +25,14 @@ public class TestChatController
         this.azureOpenAiChatModel = azureOpenAiChatModel;
     }
 
-    @GetMapping("/chat")
-    public List<Generation> chat()
+    @PostMapping("/chat")
+    public String chat(@RequestBody ChatRequest request)
     {
 //        return chatClient.prompt().user(message).call().content();
 
-        Prompt prompt = new Prompt("Can you tell me top 5 moves in chess game.");
+        Prompt prompt = new Prompt(request.getPrompt());
         ChatResponse chatResponse = azureOpenAiChatModel.call(prompt);
-        return chatResponse.getResults();
+        return chatResponse.getResults().get(0).getOutput().getText();
     }
 
 }
