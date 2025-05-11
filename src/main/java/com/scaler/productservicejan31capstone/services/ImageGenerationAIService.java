@@ -7,15 +7,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
-public class ImageGenerationService {
+public class ImageGenerationAIService {
 
     @Value("${spring.ai.azure.openai.api-key}")
     private String apiKey;
@@ -23,15 +20,11 @@ public class ImageGenerationService {
     @Value("${spring.ai.azure.openai.endpoint}")
     private String endpoint;
 
-
-    @Value("${spring.ai.azure.openai.chat.options.deployment-name}")
-    private String dalleDeployment;
-
     @Value("${ai.azure.openai.api.version}")
     private String apiVersion;
 
     public String generateImageUrl(String prompt) {
-        String dalleUrl = String.format("%s/openai/images/generations:submit?api-version=2023-12-01-preview", endpoint);
+        String dalleDeployment = "dall-e-3";
 
         WebClient webClient = WebClient.builder()
                 .baseUrl(endpoint)

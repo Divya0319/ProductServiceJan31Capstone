@@ -22,16 +22,18 @@ public class ProductDBService implements ProductService, ProductAIService
 
     private final ChatClient chatClient;
     private final AzureOpenAiChatModel azureOpenAiChatModel;
+    private final ImageGenerationAIService imageGenerationAIService;
     ProductRepository productRepository;
     CategoryRepository categoryRepository;
 
     public ProductDBService(ProductRepository productRepository,
-                            CategoryRepository categoryRepository, ChatClient chatClient, AzureOpenAiChatModel azureOpenAiChatModel)
+                            CategoryRepository categoryRepository, ChatClient chatClient, AzureOpenAiChatModel azureOpenAiChatModel, ImageGenerationAIService imageGenerationAIService)
     {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.chatClient = chatClient;
         this.azureOpenAiChatModel = azureOpenAiChatModel;
+        this.imageGenerationAIService = imageGenerationAIService;
     }
 
     @Override
@@ -96,6 +98,12 @@ public class ProductDBService implements ProductService, ProductAIService
         product.setCategory(categoryObj);
 
         String description = getDescriptionFromAI(product);
+
+        if(imageUrl == null)
+            imageUrl = getImageURLFromAI(description);
+
+        System.out.println(imageUrl);
+
         product.setDescription(description);
 
         return productRepository.save(product);
@@ -123,5 +131,9 @@ public class ProductDBService implements ProductService, ProductAIService
         ChatResponse chatResponse = azureOpenAiChatModel.call(prompt);
         return chatResponse.getResults().get(0).getOutput().getText();
 
+    }
+
+    private String getImageURLFromAI(String description) {
+        return imageGenerationAIService.generateImageUrl(description);
     }
 }
